@@ -1,14 +1,18 @@
 # main.py
+"""CLI user interface for the Best Buy store example."""
+
 from __future__ import annotations
 
-import products  # your products.py with class Product
-import store     # your store.py with class Store
+from typing import List, Tuple
+
+import products  # products.py with class Product
+import store     # store.py with class Store
 
 
 # ---------------------------------------------------------------------------
 # Setup initial stock (default inventory)
 # ---------------------------------------------------------------------------
-product_list = [
+product_list: List[products.Product] = [
     products.Product("MacBook Air M2", price=1450, quantity=100),
     products.Product("Bose QuietComfort Earbuds", price=250, quantity=500),
     products.Product("Google Pixel 7", price=500, quantity=250),
@@ -32,14 +36,29 @@ def _list_products(s: store.Store) -> None:
     if not active:
         print("No active products.")
         return
+
     print("\nActive products:")
-    for idx, p in enumerate(active, start=1):
-        # mirrors Product.__str__/show
-        print(f"{idx}. {p.name} — Price: {p.price:g}, Quantity: {p.get_quantity()}")
+    for idx, prod in enumerate(active, start=1):
+        print(f"{idx}. {prod.name} — Price: {prod.price:g}, "
+              f"Quantity: {prod.get_quantity()}")
 
 
 def _show_total_amount(s: store.Store) -> None:
     print("\nTotal quantity in store:", s.get_total_quantity())
+
+
+def _prompt_positive_int(prompt: str) -> int | None:
+    raw = input(prompt).strip()
+    if raw == "":
+        return None
+    if not raw.isdigit():
+        print("Please enter a positive integer.")
+        return 0
+    value = int(raw)
+    if value <= 0:
+        print("Please enter a positive integer.")
+        return 0
+    return value
 
 
 def _make_order(s: store.Store) -> None:
@@ -49,10 +68,9 @@ def _make_order(s: store.Store) -> None:
         return
 
     _list_products(s)
-    print("\nEnter items to order. Press ENTER without input to finish.")
-    print("Example: choose product number then quantity.")
+    print("\nEnter items to order. Press ENTER on product number to finish.")
 
-    shopping_list = []
+    shopping_list: List[Tuple[products.Product, int]] = []
     while True:
         choice = input("Product # (ENTER to finish): ").strip()
         if choice == "":
@@ -66,18 +84,16 @@ def _make_order(s: store.Store) -> None:
             print("Product number out of range.")
             continue
 
-        qty_raw = input("Quantity: ").strip()
-        if not qty_raw.isdigit():
-            print("Please enter a positive integer quantity.")
+        qty = _prompt_positive_int("Quantity: ")
+        if qty is None:
+            print("Quantity is required.")
+            continue
+        if qty == 0:
             continue
 
-        qty = int(qty_raw)
-        if qty <= 0:
-            print("Quantity must be positive.")
-            continue
-
-        shopping_list.append((active[idx - 1], qty))
-        print(f"  Added: {active[idx - 1].name} x {qty}")
+        product = active[idx - 1]
+        shopping_list.append((product, qty))
+        print(f"  Added: {product.name} x {qty}")
 
     if not shopping_list:
         print("No items selected.")
@@ -86,8 +102,8 @@ def _make_order(s: store.Store) -> None:
     try:
         total = s.order(shopping_list)
         print(f"\nOrder successful! Total cost: {total:g}")
-    except Exception as e:
-        print(f"\nOrder failed: {e}")
+    except Exception as exc:
+        print(f"\nOrder failed: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -113,5 +129,4 @@ def start(s: store.Store) -> None:
 
 
 if __name__ == "__main__":
-    # Kick off the UI with the default store
     start(best_buy)
